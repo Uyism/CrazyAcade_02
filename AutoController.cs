@@ -6,6 +6,7 @@ using Jh_Lib;
 
 public class AutoController : MonoBehaviour
 {
+    GameObject mSystemManager;
     BombFactory mBombFactory;
     BombExplodeFactory mBombExplodeFactory;
     CharacterFactory mCharacterFactory;
@@ -19,13 +20,13 @@ public class AutoController : MonoBehaviour
 
     void Start()
     {
-        GameObject SystemManager = GameObject.Find("SystemManager");
-        mBombFactory = SystemManager.GetComponent<BombFactory>();
-        mBombExplodeFactory = SystemManager.GetComponent<BombExplodeFactory>();
-        mCharacterFactory = SystemManager.GetComponent<CharacterFactory>();
-        mItemFactory = SystemManager.GetComponent<ItemFactory>();
+        mSystemManager = GameObject.Find("SystemManager");
+        mBombFactory = mSystemManager.GetComponent<BombFactory>();
+        mBombExplodeFactory = mSystemManager.GetComponent<BombExplodeFactory>();
+        mCharacterFactory = mSystemManager.GetComponent<CharacterFactory>();
+        mItemFactory = mSystemManager.GetComponent<ItemFactory>();
 
-        mTileMap = SystemManager.GetComponent<TileMap>();       
+        mTileMap = mSystemManager.GetComponent<TileMap>();       
         mCharacter = this.GetComponent<Character>();
 
         mCurIndex = TileMap.PosToIndex(transform.position);
@@ -36,9 +37,13 @@ public class AutoController : MonoBehaviour
 
     public void CalcBehavior()
     {
-        GameObject.Find("SystemManager").GetComponent<WarningRender>().SetDebugTileDefault(mCurIndex);       
+        // Debug Render
+        mSystemManager.GetComponent<WarningRender>().SetDebugTileDefault(mCurIndex);       
+        
         mNextIndex = CalacWhereToGo();
-        GameObject.Find("SystemManager").GetComponent<WarningRender>().SetDebugTileColor(mNextIndex, Color.blue);
+
+        // Debug Render
+        mSystemManager.GetComponent<WarningRender>().SetDebugTileColor(mNextIndex, Color.blue);
     }
 
     void FixedUpdate()
