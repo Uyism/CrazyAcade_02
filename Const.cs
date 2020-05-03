@@ -7,6 +7,7 @@ public struct StructUserData
     public string uid;
     public string opponentUid;
     public bool isPVPMode;
+    public string itemData;
 }
 
 public enum EDirection

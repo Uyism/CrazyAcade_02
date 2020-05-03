@@ -33,11 +33,16 @@ public class NetSetting : MonoBehaviour
                 mUserData.uid = response.uid;
                 mUserData.isPVPMode = true;
                 string map_data = response.parameter["mapData"];
+                string item_data = response.parameter["itemData"];
 
                 // 맵 데이터에 저장
                 JsonFactory.WriteString(Const.MapDataName, map_data);
+                mUserData.itemData = item_data;
             }
         }
+
+        mNet.SetCallBack(CallBack);
+        mNet.RequestMsg(request);
     }
 
     // PVP
