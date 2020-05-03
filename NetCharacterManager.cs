@@ -13,6 +13,11 @@ public class NetCharacterManager : MonoBehaviour
 
     private void Start()
     {
+        string user_data = JsonFactory.Load(Const.UserDataName);
+        StructUserData _user_data = JsonUtility.FromJson<StructUserData>(user_data);
+        if (!_user_data.isPVPMode)
+            return;
+        
         // 소켓 설치
         gameObject.AddComponent<ClientNet>();
         mNEt = this.GetComponent<ClientNet>();
