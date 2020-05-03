@@ -12,21 +12,21 @@ public class BombExplode : PoolObject
     float mLifeTime = Const.BombLifeTime;
     public bool mEnd = false; // BombExplode 끝남 여부
 
-    Const.EXPLODE_EFFECT_TYPE mBombType; // ex) 방향, 중간, 끝
-    Dictionary<Const.EXPLODE_EFFECT_TYPE, string> mExplodeAnim = new Dictionary<Const.EXPLODE_EFFECT_TYPE, string>(); // ex) 방향, 중간, 끝에 해당하는 애니메이션 
+    EExplodeEffectType mBombType; // ex) 방향, 중간, 끝
+    Dictionary<EExplodeEffectType, string> mExplodeAnim = new Dictionary<EExplodeEffectType, string>(); // ex) 방향, 중간, 끝에 해당하는 애니메이션 
 
     // @PoolObject
     // 생성 시점이 active 시점 보다 빠를 수 있음
     void Awake()
     {
-        mExplodeAnim[Const.EXPLODE_EFFECT_TYPE.BOMB_DEFAULT] = "default";
-        mExplodeAnim[Const.EXPLODE_EFFECT_TYPE.BOMB_DIR] = "isDir";
-        mExplodeAnim[Const.EXPLODE_EFFECT_TYPE.BOMB_CENTER] = "isStart";
-        mExplodeAnim[Const.EXPLODE_EFFECT_TYPE.BOMB_END] = "isEnd";
+        mExplodeAnim[EExplodeEffectType.BombDefault] = "default";
+        mExplodeAnim[EExplodeEffectType.BombDir] = "isDir";
+        mExplodeAnim[EExplodeEffectType.BombCenter] = "isStart";
+        mExplodeAnim[EExplodeEffectType.BombEnd] = "isEnd";
         mSystemManager = GameObject.Find("SystemManager");
     }
 
-    public void InitBombExplode(Const.EXPLODE_EFFECT_TYPE bomb_type, int index, float life_time)
+    public void InitBombExplode(EExplodeEffectType bomb_type, int index, float life_time)
     {
         mIndex = index;
         mLifeTime = life_time;
@@ -68,7 +68,7 @@ public class BombExplode : PoolObject
     {
         // @TODO BombExplode가 터질 때 CurIndex에 아직 Bomb이 있음 (IsWalk == true 라도 랜더링 되도록 예외처리)
         // @TODO Bomb 제거 후 터지도록 수정해야함
-        if (mBombType != Const.EXPLODE_EFFECT_TYPE.BOMB_CENTER)
+        if (mBombType != EExplodeEffectType.BombCenter)
         {
             // IsWakable == false 일 경우 해당 객체 종료
             if (!mSystemManager.GetComponent<TileMap>().IsWalkable(mIndex))

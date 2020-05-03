@@ -47,9 +47,9 @@ public class TileMapFactory : MonoBehaviour
                 Tile tile = CreateTile(idx);
                 mTileMap[idx] = tile;
 
-                Const.ETileType tile_type = Const.ETileType.Default;
+                ETileType tile_type = ETileType.Default;
                 if (mLoadMapData.Count > idx)
-                    tile_type = (Const.ETileType)mLoadMapData[idx];
+                    tile_type = (ETileType)mLoadMapData[idx];
                 tile.SetTileType(tile_type);
             }
         }

@@ -9,7 +9,7 @@ public class Character : MonoBehaviour
 {
     #region Parameter
 
-    CharacterFactory mCharacterFactory;
+    CharacterManager mCharacterManager;
     GameObject mSystemManager;
     public GameObject PlayerSign;
 
@@ -34,7 +34,7 @@ public class Character : MonoBehaviour
 
     // Inspector
     [HideInInspector]
-    public Const.EPlayerState mPlayerState = Const.EPlayerState.EWalk;
+    public EPlayerState mPlayerState = EPlayerState.EWalk;
 
     [Header("캐릭터")]
     public int CurIndex = 0;
@@ -45,6 +45,12 @@ public class Character : MonoBehaviour
     public int BombCnt = Const.BombCount;
     public int BombSize = Const.BombSize;
 
+    // Net
+    public delegate void mDelegateType(int index);
+    mDelegateType mBombAttackCallBack;
+    mDelegateType mRecurrectCallBAck;
+    ClientNet mNet;
+
     #endregion
 
     public int GetSetNiddleCnt { get => NiddleCnt; set { NiddleCnt = value; SetNiddleCntText(); } }
@@ -52,7 +58,7 @@ public class Character : MonoBehaviour
     private void Start()
     {
         mSystemManager = GameObject.Find("SystemManager");
-        mCharacterFactory = mSystemManager.GetComponent<CharacterFactory>();
+        mCharacterManager = mSystemManager.GetComponent<CharacterManager>();
 
         anim = GetComponent<Animator>();
         GetSetNiddleCnt = 2;
@@ -62,6 +68,8 @@ public class Character : MonoBehaviour
             this.GetComponent<SpriteRenderer>().material = Resources.Load<Material>("Material/character_red");
         else
             this.GetComponent<SpriteRenderer>().material = Resources.Load<Material>("Material/character_blue");
+
+        this.transform.position = GetRandomPos();
     }
 
     public void SetAutoControl(bool is_auto)
@@ -69,7 +77,12 @@ public class Character : MonoBehaviour
         mIsAuto = is_auto;
         if (mIsAuto)
             gameObject.AddComponent<AutoController>();
-        else
+
+        if (!mIsPlayerTeam)
+            return;
+
+        // 수동
+        if (!mIsAuto)
         {
             if (Application.platform == RuntimePlatform.Android)
                 gameObject.AddComponent<PlayerController_mobile>();
@@ -77,6 +90,7 @@ public class Character : MonoBehaviour
                 gameObject.AddComponent<PlayerController>();
         }
 
+        // 내 캐릭터 표시
         if (mIsPlayer)
             PlayerSign.SetActive(true);
     }
@@ -85,36 +99,36 @@ public class Character : MonoBehaviour
     {
         switch (mPlayerState)
         {
-            case Const.EPlayerState.EWalk:
+            case EPlayerState.EWalk:
                 CurIndex = TileMap.PosToIndex(transform.position);
                 CheckTrapInWaterBall();
                 break;
 
-            case Const.EPlayerState.EWaterBall:
+            case EPlayerState.EWaterBall:
                 CheckOpponentTouchWaterBall();
                 break;
 
-            case Const.EPlayerState.EDead:
+            case EPlayerState.EDead:
                 break;
 
         }
     }
 
-    public void Move(Const.EDirection dir)
+    public void Move(EDirection dir)
     {
-        if (mPlayerState != Const.EPlayerState.EWalk) return;
+        if (mPlayerState != EPlayerState.EWalk) return;
 
         Vector3 pos_dir = Vector3.zero;
         switch (dir)
         {
-            case Const.EDirection.UP: pos_dir = Vector3.up; break;
-            case Const.EDirection.Down: pos_dir = Vector3.down; break;
-            case Const.EDirection.Right: pos_dir = Vector3.right; break;
-            case Const.EDirection.Left: pos_dir = Vector3.left; break;
+            case EDirection.UP: pos_dir = Vector3.up; break;
+            case EDirection.Down: pos_dir = Vector3.down; break;
+            case EDirection.Right: pos_dir = Vector3.right; break;
+            case EDirection.Left: pos_dir = Vector3.left; break;
         }
         SetMoveAnim(pos_dir);
 
-        bool is_free = CheckIsWalkable(transform.position + pos_dir.normalized / 2);
+        bool is_free = CheckIsWalkableFree(transform.position + pos_dir.normalized / 2);
         if (!is_free)
             return;
 
@@ -123,18 +137,39 @@ public class Character : MonoBehaviour
 
     public void Move(int index)
     {
-        if (mPlayerState != Const.EPlayerState.EWalk) return;
+        if (mPlayerState != EPlayerState.EWalk) return;
 
         Vector3 target_pos = TileMap.IndexToPos(index);
         Vector3 cur_pos = transform.position;
         Vector3 dir = target_pos - cur_pos;
         SetMoveAnim(dir);
 
-        bool is_free = CheckIsWalkable(transform.position + dir.normalized / 2);
+        bool is_free = CheckIsWalkableFree(transform.position + dir.normalized / 2);
         if (!is_free)
             return;
 
         transform.Translate(dir.normalized * mWalkSpeed * Time.deltaTime);
+    }
+
+    public void SetBombAttackCallBack(mDelegateType call_back)
+    {
+        // 소켓 설치
+        mBombAttackCallBack = call_back;
+        gameObject.AddComponent<ClientNet>();
+        mNet = GetComponent<ClientNet>();
+
+        // @request 소켓을 서버에 등록
+        StructRequest request = new StructRequest();
+        request.uid = Const.UserData.uid;
+        request.request_url = URL.SetBombSocket.ToString();
+
+        mNet.SetCallBack(NetBombAttackCallBack); // 상대 클라이언트에서 물풍선 설치했을 때 받을 콜백
+        mNet.RequestMsg(request);
+    }
+
+    public void SetRecurrectCallBack(mDelegateType call_back)
+    {
+        mRecurrectCallBAck = call_back;
     }
 
     #region Inner Function
@@ -144,7 +179,7 @@ public class Character : MonoBehaviour
         bool is_explode_tile = mSystemManager.GetComponent<BombExplodeFactory>().IsBombExplodeTile(TileMap.PosToIndex(transform.position));
         if (is_explode_tile == true)
         {
-            mPlayerState = Const.EPlayerState.EWaterBall;
+            mPlayerState = EPlayerState.EWaterBall;
             anim.SetBool("water_ball", true);
 
             TestShaderStart();
@@ -156,13 +191,13 @@ public class Character : MonoBehaviour
     void CheckOpponentTouchWaterBall()
     {
         // 적과 만났을  경우 Dead
-        List<Character> opponent_list = mCharacterFactory.GetOpponentList(mIsPlayerTeam);
+        List<Character> opponent_list = mCharacterManager.GetOpponentList(mIsPlayerTeam);
         if (opponent_list == null)
             return;
 
         foreach (Character charac in opponent_list)
         {
-            if (charac.mPlayerState == Const.EPlayerState.EWalk)
+            if (charac.mPlayerState == EPlayerState.EWalk)
             {
                 if (CurIndex == charac.CurIndex)
                     SetDead();
@@ -170,10 +205,10 @@ public class Character : MonoBehaviour
         }
 
         // 아군과 만났을 경우 부활
-        List<Character> my_team_list = mCharacterFactory.GetOpponentList(!mIsPlayerTeam);
+        List<Character> my_team_list = mCharacterManager.GetOpponentList(!mIsPlayerTeam);
         foreach (Character charac in my_team_list)
         {
-            if (charac.mPlayerState == Const.EPlayerState.EWalk)
+            if (charac.mPlayerState == EPlayerState.EWalk)
             {
                 if (CurIndex == charac.CurIndex)
                     SetResurect();
@@ -183,23 +218,25 @@ public class Character : MonoBehaviour
 
     void SetMoveAnim(Vector3 dir) 
     {
-        Const.EDirection e_dir = JUtils.GetDir(dir, Vector3.zero);
+        EDirection e_dir = JUtils.GetDir(dir, Vector3.zero);
         switch (e_dir)
         {
-            case Const.EDirection.UP:  anim.SetTrigger("up"); break;
-            case Const.EDirection.Down:  anim.SetTrigger("down"); break;
-            case Const.EDirection.Right:  anim.SetTrigger("right"); break;
-            case Const.EDirection.Left: anim.SetTrigger("left"); break;
+            case EDirection.UP:  anim.SetTrigger("up"); break;
+            case EDirection.Down:  anim.SetTrigger("down"); break;
+            case EDirection.Right:  anim.SetTrigger("right"); break;
+            case EDirection.Left: anim.SetTrigger("left"); break;
         }
     }
 
-    public bool CheckIsWalkable(Vector3 pos_dir)
+    public bool CheckIsWalkableFree(Vector3 pos_dir)
     {
         // 물폭탄 구역 지나가도 되는 타임인가
         if (mIsWalkBlockFreeTime)
         {
             mWalkingBlockFreeTime -= 1;
             if (mWalkingBlockFreeTime < 0) mIsWalkBlockFreeTime = false;
+
+            return mSystemManager.GetComponent<TileMap>().IsWalkableFree(pos_dir);
         }
         else
         {
@@ -211,9 +248,23 @@ public class Character : MonoBehaviour
         return true;
     }
 
+
+    void NetBombAttackCallBack(StructRequest response)
+    {
+        // 상대 클라이언트에서 물풍선 설치했다는 통신을 받음
+        if (response.request_url == URL.AttackBomb.ToString())
+        {
+            string bomb_index = response.parameter["bombIndex"];
+
+            if (mBombAttackCallBack != null)
+                mBombAttackCallBack(int.Parse(bomb_index));
+        }
+
+    }
+
     public virtual void BombAttack()
     {
-        if (mPlayerState != Const.EPlayerState.EWalk) return;
+        if (mPlayerState != EPlayerState.EWalk) return;
 
         if (BombCnt <= 0) return;
 
@@ -223,6 +274,35 @@ public class Character : MonoBehaviour
         BombCnt -= 1;
         mWalkingBlockFreeTime = mOriWalkingBlockFreeTime;
         mIsWalkBlockFreeTime = true;
+
+        // PVP 모드에서만 동작
+        if (mNet == null) return;
+
+        // @request 물풍선 설치
+        StructRequest request = new StructRequest();
+        request.uid = Const.UserData.uid;
+        request.request_url = URL.AttackBomb.ToString();
+        request.parameter = new Dictionary<string, string>();
+        request.parameter["bombIndex"] = cur_index.ToString();
+
+        mNet.RequestMsg(request);
+    }
+
+
+    public virtual void BombAttack(int index)
+    {
+        if (mPlayerState != EPlayerState.EWalk) return;
+
+        if (BombCnt <= 0) return;
+
+        int cur_index = index;
+        mSystemManager.GetComponent<BombFactory>().MakeBomb(cur_index, BombSize, this);
+
+        BombCnt -= 1;
+        mWalkingBlockFreeTime = mOriWalkingBlockFreeTime;
+        mIsWalkBlockFreeTime = true;
+
+ 
     }
 
     public void PickUpBombCnt()
@@ -263,7 +343,7 @@ public class Character : MonoBehaviour
 
     public void SetDead()
     {
-        mPlayerState = Const.EPlayerState.EDead;
+        mPlayerState = EPlayerState.EDead;
         anim.SetBool("water_ball", false);
         anim.SetTrigger("dead");
 
@@ -281,13 +361,18 @@ public class Character : MonoBehaviour
         if (GetSetNiddleCnt <= 0) return;
 
         GetSetNiddleCnt -= 1;
-        mPlayerState = Const.EPlayerState.EWalk;
+        mPlayerState = EPlayerState.EWalk;
         mWalkSpeed = mOriWalkSpeed;
 
         anim.SetTrigger("resurrect");
         anim.SetBool("water_ball", false);
 
         mSystemManager.GetComponent<AudioManager>().PlayWaterBallEndAudio();
+
+
+        int cur_index = TileMap.PosToIndex(transform.position);
+        if (mRecurrectCallBAck != null)
+            mRecurrectCallBAck(cur_index);
     }
 
     void TestShaderStart()
@@ -303,6 +388,27 @@ public class Character : MonoBehaviour
     {
         yield return new WaitForSeconds(2);
         this.GetComponent<SpriteRenderer>().material = Resources.Load<Material>("Material/character_blue");
+    }
+
+    Vector3 GetRandomPos()
+    {
+        TileMap tile_map = GameObject.Find("SystemManager").gameObject.GetComponent<TileMap>();
+        List<int> walkable_index_list = new List<int>();
+        for (int i = 0; i < Const.TileCntY; i++)
+        {
+            for (int j = 0; j < Const.TileCntX; j++)
+            {
+                int index = i + j * Const.TileCntX;
+                if (tile_map.IsWalkable(index))
+                    walkable_index_list.Add(index);
+            }
+        }
+
+        int random = Random.Range(0, walkable_index_list.Count);
+        int random_index = walkable_index_list[random];
+        Vector3 random_pos = TileMap.IndexToPos(random_index);
+        random_pos.z = -1;
+        return random_pos;
     }
 
     #endregion

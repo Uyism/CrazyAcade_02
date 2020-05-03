@@ -16,44 +16,44 @@ public class Tile : MonoBehaviour
 
     bool mIsBlocked = false;
 
-    public Const.ETileType mTileType;
+    public ETileType mTileType;
     Animator mAnimCrush;
-    static public Dictionary<Const.ETileType, string> TILE_TEXTURE = new Dictionary<Const.ETileType, string>();
+    static public Dictionary<ETileType, string> TILE_TEXTURE = new Dictionary<ETileType, string>();
 
     private void Awake()
     {
-        TILE_TEXTURE[Const.ETileType.Default] = null;
-        TILE_TEXTURE[Const.ETileType.Forest_1] = "forest1";
-        TILE_TEXTURE[Const.ETileType.Flower] = "flower";
-        TILE_TEXTURE[Const.ETileType.Rock] = "rock";
-        TILE_TEXTURE[Const.ETileType.Basket] = "basket";
+        TILE_TEXTURE[ETileType.Default] = null;
+        TILE_TEXTURE[ETileType.Forest_1] = "forest1";
+        TILE_TEXTURE[ETileType.Flower] = "flower";
+        TILE_TEXTURE[ETileType.Rock] = "rock";
+        TILE_TEXTURE[ETileType.Basket] = "basket";
         mAnimCrush = GetComponent<Animator>();
     }
 
-    public void SetTileType(Const.ETileType type)
+    public void SetTileType(ETileType type)
     {
         SetTileTexture(this.gameObject, type);
         mTileType = type;
 
         switch (type)
         {
-            case Const.ETileType.Default:
+            case ETileType.Default:
                 SetDefault();
                 break;
 
-            case Const.ETileType.Forest_1:
+            case ETileType.Forest_1:
                 SetForest1();
                 break;
 
-            case Const.ETileType.Rock:
+            case ETileType.Rock:
                 SetRock();
                 break;
 
-            case Const.ETileType.Basket:
+            case ETileType.Basket:
                 SetBasket();
                 break;
 
-            case Const.ETileType.Flower:
+            case ETileType.Flower:
                 SetFlower();
                 break;
         }
@@ -66,13 +66,13 @@ public class Tile : MonoBehaviour
         this.gameObject.transform.position = pos;
     }
 
-    public static void SetTileTexture(GameObject obj, Const.ETileType type)
+    public static void SetTileTexture(GameObject obj, ETileType type)
     {
         obj.SetActive(false);
         string res = TILE_TEXTURE[type];
 
         obj.GetComponent<SpriteRenderer>().sprite = Resources.Load<Sprite>(res);
-        obj.SetActive(type != Const.ETileType.Default);
+        obj.SetActive(type != ETileType.Default);
     }
 
     #region Inner Function
@@ -80,7 +80,7 @@ public class Tile : MonoBehaviour
     public void SetDefault()
     {
         Walkable = true;
-        SetTileTexture(this.gameObject, Const.ETileType.Default);
+        SetTileTexture(this.gameObject, ETileType.Default);
     }
 
     public void SetForest1()
@@ -127,7 +127,7 @@ public class Tile : MonoBehaviour
         GameObject.Find("SystemManager").GetComponent<ItemFactory>().SetItem(transform.position);
     }
 
-    public Const.ETileType GetTileType()
+    public ETileType GetTileType()
     {
         return mTileType;
     }

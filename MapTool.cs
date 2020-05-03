@@ -21,7 +21,7 @@ public class MapTool : MonoBehaviour
     TileMapFactory mTileFactory;
 
     public bool mSelecting = false;
-    Const.ETileType mTileType;
+    ETileType mTileType;
 
     private void Start()
     {
@@ -69,7 +69,7 @@ public class MapTool : MonoBehaviour
 
     public void SelectTileType(int number)
     {
-        mTileType = (Const.ETileType)number;
+        mTileType = (ETileType)number;
         string res = Tile.TILE_TEXTURE[mTileType];
         BoundBox.GetComponent<Image>().sprite = Resources.Load<Sprite>(res);
     }
@@ -131,7 +131,7 @@ public class MapTool : MonoBehaviour
                 int index = (i * Const.TileCntX) + j;
                 if (tile_map.ContainsKey(index))
                 {
-                    tile_map[index].SetTileType(Const.ETileType.Default);
+                    tile_map[index].SetTileType(ETileType.Default);
                     mTileMap.SetTile(index, null);
                 }
             }

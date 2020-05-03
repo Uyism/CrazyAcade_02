@@ -5,7 +5,18 @@ using UnityEngine.SceneManagement;
 
 public class SystemManager : MonoBehaviour
 {
-    void Awake()
+
+    void Start()
+    {
+        string data = JsonFactory.Load(Const.UserDataName);
+        StructUserData _data = JsonUtility.FromJson<StructUserData>(data);
+        if (_data.isPVPMode)
+            SetPVPMode();
+        else
+            SetPVEMode(); 
+    }
+
+    void SetPVEMode()
     {
         //1. 맵 생성
         TileMapFactory factory_map = this.GetComponent<TileMapFactory>();
@@ -13,8 +24,63 @@ public class SystemManager : MonoBehaviour
         this.GetComponent<TileMap>().SetTileMap(map_data);
 
         //2. 캐릭터 생성
-        CharacterFactory factory_character = this.GetComponent<CharacterFactory>();
-        factory_character.SetMode();
+        SetAICharacter(5);
+    }
+
+    void SetPVPMode()
+    {
+        // 0. 유저 데이터 세팅
+        SetUserData();
+
+        // 1. 맵 생성
+        MakeMap();
+
+        // 2. 캐릭터 생성
+        MakeCharacter();
+    }
+
+    void SetUserData()
+    {
+        string data = JsonFactory.Load(Const.UserDataName);
+        StructUserData _data = JsonUtility.FromJson<StructUserData>(data);
+        Const.UserData = _data;
+    }
+
+    void MakeMap()
+    {
+        // PVP모드에서는 서버에서 받은 MapData를 사용
+        TileMapFactory factory_map = this.GetComponent<TileMapFactory>();
+        Dictionary<int, Tile> map_data = factory_map.MakeTileMap();
+        this.GetComponent<TileMap>().SetTileMap(map_data);
+    }
+
+    void MakeCharacter()
+    {
+        // 주인공
+        CharacterFactory player1_fac = this.GetComponent<CharacterFactory>();
+        player1_fac.SetMode(EPlayMode.EPVP);
+        player1_fac.SetAuto(false);
+        player1_fac.SetIsPlayerTeam(true);
+        player1_fac.SetIsPlayer(true);
+        Character player1 = player1_fac.MakeCharacter();
+
+        // 상대
+        CharacterFactory player2_fac = this.GetComponent<CharacterFactory>();
+        player2_fac.SetMode(EPlayMode.EPVP);
+        player2_fac.SetAuto(false);
+        player2_fac.SetIsPlayerTeam(false);
+        Character player2 = player2_fac.MakeCharacter();
+
+        // PVP 모드일 경우
+        NetCharacterManager net_character_manager = this.GetComponent<NetCharacterManager>();
+        net_character_manager.SetPlayer1(player1);
+        net_character_manager.SetPlayer2(player2);
+
+        // 생성된 유저 관리
+        CharacterManager character_manager = this.GetComponent<CharacterManager>();
+        character_manager.AddPlayer1Team(player1);
+        character_manager.AddPlayer2Team(player2);
+        character_manager.SetPlayer(player1);
     }
 
     private void Update()
@@ -26,6 +92,47 @@ public class SystemManager : MonoBehaviour
             {
                 SceneManager.LoadScene("Intro");
             }
+        }
+    }
+
+    void SetAICharacter(int team_member_cnt)
+    {
+
+        // 생성된 유저 관리
+        //[layer
+        CharacterFactory player_fac = this.GetComponent<CharacterFactory>();
+        player_fac.SetMode(EPlayMode.EAI);
+        player_fac.SetAuto(false);
+        player_fac.SetIsPlayerTeam(true);
+        player_fac.SetIsPlayer(true);
+
+        CharacterManager character_manager = this.GetComponent<CharacterManager>();
+        Character player = player_fac.MakeCharacter();
+        character_manager.AddPlayer1Team(player);
+        character_manager.SetPlayer(player);
+
+        // player team ai
+        for (int i = 0; i < team_member_cnt-1; i++)
+        {
+            player_fac.SetMode(EPlayMode.EAI);
+            player_fac.SetAuto(true);
+            player_fac.SetIsPlayerTeam(true);
+            player_fac.SetIsPlayer(false);
+            
+            Character _player = player_fac.MakeCharacter();
+            character_manager.AddPlayer1Team(player);
+        }
+
+        // enemy team ai
+        for (int i = 0; i < team_member_cnt; i++)
+        {
+            player_fac.SetMode(EPlayMode.EAI);
+            player_fac.SetAuto(true);
+            player_fac.SetIsPlayerTeam(false);
+            player_fac.SetIsPlayer(false);
+
+            Character _player = player_fac.MakeCharacter();
+            character_manager.AddPlayer1Team(player);
         }
     }
 

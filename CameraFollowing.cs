@@ -7,13 +7,15 @@ public class CameraFollowing : MonoBehaviour
     GameObject mPlayer;
     int mOffset = 8; // Following 멈추는 간격
 
-    void Start()
-    {
-        mPlayer = GameObject.Find("SystemManager").GetComponent<CharacterFactory>().GetPlayer().gameObject;
-    }
-
     void Update()
     {
+        try 
+        {
+            if (mPlayer == null)
+                mPlayer = GameObject.Find("SystemManager").GetComponent<CharacterManager>().GetPlayer().gameObject;
+
+        } catch { return; }
+
         int player_index = mPlayer.GetComponent<Character>().CurIndex;
         int player_index_x = player_index % Const.TileCntX;
         int player_index_y = player_index / Const.TileCntX;

@@ -58,6 +58,15 @@ public class TileMap : MonoBehaviour
         return IsWalkable(index);
     }
 
+    public bool IsWalkableFree(Vector3 pos)
+    {
+        int index = PosToIndex(pos);
+        // 맵 범위 밖
+        if (!mTileMap.ContainsKey(index)) return false;
+
+        return mTileMap[index].Walkable;
+    }
+
     public bool IsWalkable(int index)
     {
         // 맵 범위 밖

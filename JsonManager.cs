@@ -26,6 +26,13 @@ using System.IO;
             File.WriteAllText(path, str);
         }
 
+        public static void WriteString(string file_name, string data)
+        {
+            string path = GetPath() + file_name;
+
+            File.WriteAllText(path, data);
+        }
+
         static string GetPath()
         {
             #if UNITY_EDITOR
@@ -35,5 +42,5 @@ using System.IO;
             #else
                 return Application.dataPath +"/";
             #endif
-    }
+        }
 }

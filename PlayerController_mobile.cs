@@ -29,17 +29,17 @@ public class PlayerController_mobile : Controller
     override public void MoveX(float diff_x)
     {
         if (diff_x > 0)
-            mCharacter.Move(Const.EDirection.Left);
+            mCharacter.Move(EDirection.Left);
         else
-            mCharacter.Move(Const.EDirection.Right);
+            mCharacter.Move(EDirection.Right);
     }
 
     override public void MoveY(float diff_y)
     {
         if (diff_y > 0)
-            mCharacter.Move(Const.EDirection.Down);
+            mCharacter.Move(EDirection.Down);
         else
-            mCharacter.Move(Const.EDirection.UP);
+            mCharacter.Move(EDirection.UP);
     }
 
     public void SetBomb()

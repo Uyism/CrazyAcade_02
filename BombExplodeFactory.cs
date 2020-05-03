@@ -25,10 +25,10 @@ public class BombExplodeFactory : ObjectPool<BombExplodeFactory, BombExplode>
         SetCenterBombEffect(index, life_time);
 
         // 사방향
-        SetDirBombEffect(index, Const.EDirection.UP, bomb_size, life_time);
-        SetDirBombEffect(index, Const.EDirection.Down, bomb_size, life_time);
-        SetDirBombEffect(index, Const.EDirection.Right, bomb_size, life_time);
-        SetDirBombEffect(index, Const.EDirection.Left, bomb_size, life_time);   
+        SetDirBombEffect(index, EDirection.UP, bomb_size, life_time);
+        SetDirBombEffect(index, EDirection.Down, bomb_size, life_time);
+        SetDirBombEffect(index, EDirection.Right, bomb_size, life_time);
+        SetDirBombEffect(index, EDirection.Left, bomb_size, life_time);   
     }
 
     public void SetBombExplodeMap(int index, BombExplode obj)
@@ -89,10 +89,10 @@ public class BombExplodeFactory : ObjectPool<BombExplodeFactory, BombExplode>
 
     void SetCenterBombEffect(int index, float life_time)
     {
-        StartBombEffect(index, Const.EXPLODE_EFFECT_TYPE.BOMB_CENTER, life_time);
+        StartBombEffect(index, EExplodeEffectType.BombCenter, life_time);
     }
 
-    void SetDirBombEffect(int center_index, Const.EDirection dir, int bomb_size, float life_time)
+    void SetDirBombEffect(int center_index, EDirection dir, int bomb_size, float life_time)
     {
 
         bool encounter_obstacle = false;
@@ -102,26 +102,26 @@ public class BombExplodeFactory : ObjectPool<BombExplodeFactory, BombExplode>
             int rot = 0;
             switch (dir)
             {
-                case Const.EDirection.Left:
+                case EDirection.Left:
                     index = center_index - i;
                     if (index / Const.TileCntX != center_index / Const.TileCntX) return; // 가로 폭탄은 같은 층에서만
 
                     rot = 270;
                     break;
 
-                case Const.EDirection.Right:
+                case EDirection.Right:
                     index = center_index + i;
                     if (index / Const.TileCntX != center_index / Const.TileCntX) return; // 가로 폭탄은 같은 층에서만
 
                     rot = 90;
                     break;
 
-                case Const.EDirection.UP:
+                case EDirection.UP:
                     index = center_index + Const.TileCntX * i;
                     rot = 0;
                     break;
 
-                case Const.EDirection.Down:
+                case EDirection.Down:
                     index = center_index - Const.TileCntX * i;
                     rot = 180;
                     break;
@@ -132,9 +132,9 @@ public class BombExplodeFactory : ObjectPool<BombExplodeFactory, BombExplode>
                 return;
 
             // 가장자리 애니메이션 적용 여부
-            Const.EXPLODE_EFFECT_TYPE bomb_type = Const.EXPLODE_EFFECT_TYPE.BOMB_DIR;
+            EExplodeEffectType bomb_type = EExplodeEffectType.BombDir;
             if (i == bomb_size)
-                bomb_type = Const.EXPLODE_EFFECT_TYPE.BOMB_END;
+                bomb_type = EExplodeEffectType.BombEnd;
 
             // BombEffect 생성
             GameObject obj = StartBombEffect(index, bomb_type, life_time);
@@ -146,7 +146,7 @@ public class BombExplodeFactory : ObjectPool<BombExplodeFactory, BombExplode>
         }
     }
 
-    GameObject StartBombEffect(int index, Const.EXPLODE_EFFECT_TYPE bomb_type, float life_time)
+    GameObject StartBombEffect(int index, EExplodeEffectType bomb_type, float life_time)
     {
         // ObjectPool 할당
         GameObject obj = Push(BombExplode);

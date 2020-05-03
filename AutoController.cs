@@ -9,7 +9,7 @@ public class AutoController : MonoBehaviour
     GameObject mSystemManager;
     BombFactory mBombFactory;
     BombExplodeFactory mBombExplodeFactory;
-    CharacterFactory mCharacterFactory;
+    CharacterManager mCharacterManager;
     ItemFactory mItemFactory;
 
     TileMap mTileMap;
@@ -23,7 +23,7 @@ public class AutoController : MonoBehaviour
         mSystemManager = GameObject.Find("SystemManager");
         mBombFactory = mSystemManager.GetComponent<BombFactory>();
         mBombExplodeFactory = mSystemManager.GetComponent<BombExplodeFactory>();
-        mCharacterFactory = mSystemManager.GetComponent<CharacterFactory>();
+        mCharacterManager = mSystemManager.GetComponent<CharacterManager>();
         mItemFactory = mSystemManager.GetComponent<ItemFactory>();
 
         mTileMap = mSystemManager.GetComponent<TileMap>();       
@@ -112,38 +112,38 @@ public class AutoController : MonoBehaviour
         */
         Dictionary<int, float> near_index_list = new Dictionary<int, float>();
 
-        AddNearIndex(ref near_index_list, cur_index, Const.EDirection.UP, near_range_size);
-        AddNearIndex(ref near_index_list, cur_index, Const.EDirection.Down, near_range_size);
-        AddNearIndex(ref near_index_list, cur_index, Const.EDirection.Right, near_range_size);
-        AddNearIndex(ref near_index_list, cur_index, Const.EDirection.Left, near_range_size);
+        AddNearIndex(ref near_index_list, cur_index, EDirection.UP, near_range_size);
+        AddNearIndex(ref near_index_list, cur_index, EDirection.Down, near_range_size);
+        AddNearIndex(ref near_index_list, cur_index, EDirection.Right, near_range_size);
+        AddNearIndex(ref near_index_list, cur_index, EDirection.Left, near_range_size);
 
         near_index_list.Add(cur_index, 0); // 자기 자신 포함
 
         return near_index_list;
     }
 
-    void AddNearIndex(ref Dictionary<int, float> near_index_list, int center_index, Const.EDirection dir, int near_range_size)
+    void AddNearIndex(ref Dictionary<int, float> near_index_list, int center_index, EDirection dir, int near_range_size)
     {
         for (int i = 1; i <= near_range_size; i++)
         {
             int index = center_index;
             switch (dir)
             {
-                case Const.EDirection.Left:
+                case EDirection.Left:
                     index = center_index - i;
                     if (index / Const.TileCntX != center_index / Const.TileCntX) return; // 같은 층에서만
                     break;
 
-                case Const.EDirection.Right:
+                case EDirection.Right:
                     index = center_index + i;
                     if (index / Const.TileCntX != center_index / Const.TileCntX) return; // 같은 층에서만
                     break;
 
-                case Const.EDirection.UP:
+                case EDirection.UP:
                     index = center_index + Const.TileCntX * i;
                     break;
 
-                case Const.EDirection.Down:
+                case EDirection.Down:
                     index = center_index - Const.TileCntX * i;
                     break;
             }
@@ -213,21 +213,21 @@ public class AutoController : MonoBehaviour
 
     void AvoidOpponent(ref Dictionary<int, float> near_index_list)
     {
-        Character charac = mCharacterFactory.GetPlayer();
-        Const.EDirection dir = JUtils.GetDir(this.transform.position, charac.transform.position);
+        Character charac = mCharacterManager.GetPlayer();
+        EDirection dir = JUtils.GetDir(this.transform.position, charac.transform.position);
         int next_index = 0;
         switch (dir)
         {
-            case Const.EDirection.UP:
+            case EDirection.UP:
                 next_index = mCurIndex - Const.TileCntX;
                 break;
-            case Const.EDirection.Down:
+            case EDirection.Down:
                 next_index = mCurIndex + Const.TileCntX;
                 break;
-            case Const.EDirection.Right:
+            case EDirection.Right:
                 next_index = mCurIndex - 1;
                 break;
-            case Const.EDirection.Left:
+            case EDirection.Left:
                 next_index = mCurIndex + 1;
                 break;
         }
