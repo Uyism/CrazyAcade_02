@@ -23,19 +23,41 @@ public class ClientNet : MonoBehaviour
     bool mIsReceiving = false; // send-receive 사이클이 끝나야 또 send 가능
     bool mIsResponsing = false; // 응답이 왔을 경우
 
+
+    bool mIsUdp = true;
+
     // 받은 응답 저장
     StructRequest mResponse;
-
+    EndPoint mRemoteIpPoint;
+    IPEndPoint mIpPoint;
     public ClientNet()
     {
-        IPEndPoint ip_point = new IPEndPoint(IPAddress.Parse("112.161.132.112"), 9999); // 서버 IP/Port
-        mSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.IP);
+        if (!mIsUdp)
+        {
+            IPEndPoint ip_point = new IPEndPoint(IPAddress.Parse("121.163.153.46"), 9999); // 서버 IP/Port
+            mSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.IP);
 
-        mSocket.Connect(ip_point);
-        Debug.Log("Socket Connect");
+            mSocket.Connect(ip_point);
+            Debug.Log("Socket Connect");
 
-        Thread p1 = new Thread(new ThreadStart(OnReceving));
-        p1.Start();
+            Thread p1 = new Thread(new ThreadStart(OnReceving));
+            p1.Start();
+        }
+        else
+        {
+
+
+            mIpPoint = new IPEndPoint(IPAddress.Parse("121.163.153.46"), 8888); // 서버 IP/Port
+            mRemoteIpPoint = new IPEndPoint(IPAddress.None, 9992);
+            mSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+
+            mSocket.Connect(mIpPoint);
+            Debug.Log("Socket Connect");
+            Thread p1 = new Thread(new ThreadStart(OnReceving));
+            p1.Start();
+
+        }
+
     }
 
     void OnReceving()
@@ -43,7 +65,12 @@ public class ClientNet : MonoBehaviour
         while (true)
         {
             byte[] data = new byte[1024*3];
-            mSocket.Receive(data);
+
+            if (!mIsUdp)
+                mSocket.Receive(data);
+            else
+                mSocket.ReceiveFrom(data, ref mRemoteIpPoint);
+            
             String msg = Encoding.Default.GetString(data);
             StructRequest request = NetFormatHelper.StringToStructRequest(msg);
             Debug.Log("수신 : " + msg);
@@ -76,8 +103,11 @@ public class ClientNet : MonoBehaviour
         Debug.Log("송신 : " + msg);
 
         byte[] data = NetFormatHelper.StringToByte(msg);
-        
-        mSocket.Send(data);
+
+        if (!mIsUdp)
+            mSocket.Send(data);
+        else
+            mSocket.SendTo(data, mIpPoint);
         mIsReceiving = true;
     }
 
