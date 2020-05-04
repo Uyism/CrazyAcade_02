@@ -18,6 +18,9 @@ public class AutoController : MonoBehaviour
     public int mCurIndex = 0;
     public int mNextIndex = 0;
 
+    Dictionary<int, float> mNearIndex;
+    List<int> mBestIndexList;
+
     void Start()
     {
         mSystemManager = GameObject.Find("SystemManager");
@@ -27,7 +30,10 @@ public class AutoController : MonoBehaviour
         mItemFactory = mSystemManager.GetComponent<ItemFactory>();
 
         mTileMap = mSystemManager.GetComponent<TileMap>();       
-        mCharacter = this.GetComponent<Character>();  
+        mCharacter = this.GetComponent<Character>();
+
+        mNearIndex = new Dictionary<int, float>();
+        mBestIndexList = new List<int>();
     }
 
     public void StartAutoControll()
@@ -82,21 +88,21 @@ public class AutoController : MonoBehaviour
         }
 
         // 4. 높은 점수를 가진 인덱스가 여러개인 경우, 랜덤으로 채택
-        List<int> best_index_list = new List<int>();
+        mBestIndexList.Clear();
         foreach (int index in near_index_list.Keys)
         {
             if (best_score == near_index_list[index])
             {
-                best_index_list.Add(index);
+                mBestIndexList.Add(index);
             }
         }
 
-        if (best_index_list.Count == 0)
+        if (mBestIndexList.Count == 0)
             return mCurIndex;
 
-        int random_index = Random.Range(0, best_index_list.Count);      
-        if (best_index_list.Contains(best_index_list[random_index]))
-            return best_index_list[random_index];
+        int random_index = Random.Range(0, mBestIndexList.Count);      
+        if (mBestIndexList.Contains(mBestIndexList[random_index]))
+            return mBestIndexList[random_index];
         
         return mCurIndex;
     }
@@ -112,19 +118,19 @@ public class AutoController : MonoBehaviour
         * 0 0 0 0 0
         * 0 0 0 0 0
         */
-        Dictionary<int, float> near_index_list = new Dictionary<int, float>();
+        mNearIndex.Clear();
 
-        AddNearIndex(ref near_index_list, cur_index, EDirection.UP, near_range_size);
-        AddNearIndex(ref near_index_list, cur_index, EDirection.Down, near_range_size);
-        AddNearIndex(ref near_index_list, cur_index, EDirection.Right, near_range_size);
-        AddNearIndex(ref near_index_list, cur_index, EDirection.Left, near_range_size);
+        AddNearIndex( cur_index, EDirection.UP, near_range_size);
+        AddNearIndex( cur_index, EDirection.Down, near_range_size);
+        AddNearIndex( cur_index, EDirection.Right, near_range_size);
+        AddNearIndex( cur_index, EDirection.Left, near_range_size);
 
-        near_index_list.Add(cur_index, 0); // 자기 자신 포함
+        mNearIndex.Add(cur_index, 0); // 자기 자신 포함
 
-        return near_index_list;
+        return mNearIndex;
     }
 
-    void AddNearIndex(ref Dictionary<int, float> near_index_list, int center_index, EDirection dir, int near_range_size)
+    void AddNearIndex( int center_index, EDirection dir, int near_range_size)
     {
         for (int i = 1; i <= near_range_size; i++)
         {
@@ -152,7 +158,7 @@ public class AutoController : MonoBehaviour
 
             
             if (mTileMap.IsWalkable(index))
-                near_index_list.Add(index, 0);
+                mNearIndex.Add(index, 0);
 
             // 걸을 수 없는 지형을 만났을 경우 return
             else
