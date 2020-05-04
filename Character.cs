@@ -62,14 +62,17 @@ public class Character : MonoBehaviour
 
         anim = GetComponent<Animator>();
         GetSetNiddleCnt = 2;
-
+        /*
         // 쉐이더로 팀 색상 구분해서 랜더링
         if (mIsPlayerTeam)
             this.GetComponent<SpriteRenderer>().material = Resources.Load<Material>("Material/character_red");
         else
             this.GetComponent<SpriteRenderer>().material = Resources.Load<Material>("Material/character_blue");
-
+            */
         this.transform.position = GetRandomPos();
+
+        if (mIsAuto)
+            this.GetComponent<AutoController>().StartAutoControll();
     }
 
     public void SetAutoControl(bool is_auto)

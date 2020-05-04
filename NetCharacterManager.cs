@@ -55,6 +55,10 @@ public class NetCharacterManager : MonoBehaviour
 
     private void Update()
     {
+
+        if (!Const.UserData.isPVPMode)
+            return;
+
         // @request 위치 전달/수신
         Vector3 player1_pos = player1.transform.position;
         StructRequest request = new StructRequest();

@@ -27,11 +27,13 @@ public class AutoController : MonoBehaviour
         mItemFactory = mSystemManager.GetComponent<ItemFactory>();
 
         mTileMap = mSystemManager.GetComponent<TileMap>();       
-        mCharacter = this.GetComponent<Character>();
+        mCharacter = this.GetComponent<Character>();  
+    }
 
+    public void StartAutoControll()
+    {
         mCurIndex = TileMap.PosToIndex(transform.position);
         mNextIndex = mCurIndex;
-
         CalcBehavior();
     }
 
